@@ -1,5 +1,5 @@
 import numpy as np
-from module.utils import least_squares
+from module.lse import least_squares
 
 def compute_minimum_phase(magnitude_spectrum, dB=True, degree=True):
     """
