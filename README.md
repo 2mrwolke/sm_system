@@ -77,14 +77,8 @@ For an end‑to‑end walk‑through, see **`example.ipynb`** (explains probe ge
 - Probes and indexing are tuned for **2nd/3rd‑order** products by default; extending to higher orders requires adjusting the collision‑avoidance rules and LS assembly.
 - There are ambiguities in dead time and gain between the pre- and post-filters of a single system branch (see the plots in example.ipynb).
 - The cepstrum-based filter design needs improvement.
-- Once an SM system is identified, its parameters can be used to design filters for active distortion compensation.
-- The identification procedure has been successfully applied in hardware setups.
-
----
-
-## Hardware Setup
-
-#### TODO - Add images of setup and results
+- Once an SM system is identified, its parameters can be used to design filters for **active distortion compensation**.
+- The identification procedure has been **successfully applied in hardware setups**.
 
 ---
 
