@@ -78,7 +78,7 @@ For an end‑to‑end walk‑through, see **`example.ipynb`** (explains probe ge
 - There are ambiguities in dead-time and gain between the pre- and post-filters within a single system branch (see the plots in example.ipynb).
 - A **uniqueness constraint** applies to ensure correct per-branch phase identification (phase overflow beyond [-pi, pi]).
 - The cepstrum-based filter design needs improvement.
-- Once an SM system is identified, its parameters can be used to design filters for active distortion compensation.
+- Once an SM system is identified, its parameters can be used to design filters for **active distortion compensation**.
 - The identification procedure has been **successfully applied in hardware setups**.
 
 ---
