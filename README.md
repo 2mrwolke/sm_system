@@ -2,10 +2,10 @@
 
 Virtual simulation & identification for nonlinear systems with **SM structure**.
 
-> **What is an SM system?**  
-> A system whose output is the sum of parallel polynomial branches. Each branch of order *m* is a cascade of:  
-> **linear pre‑filter** \(H_{m1}\) → **static nonlinearity** \((\cdot)^m\) → **linear post‑filter** \(H_{m2}\).  
-> This structure was introduced by Baumgartner & Rugh (1975) for *steady‑state frequency‑response* based identification.
+**What is an SM system?**  
+A system whose output is the sum of parallel polynomial branches. Each branch of order *m* is a cascade of:  
+**linear pre‑filter** \(H_{m1}\) → **static nonlinearity** \((\cdot)^m\) → **linear post‑filter** \(H_{m2}\).  
+This structure was introduced by Baumgartner & Rugh **[BR75]**.
 
 ![SM-System](https://github.com/2mrwolke/sm_system/blob/main/SM.png)
 
