@@ -73,11 +73,12 @@ For an end‑to‑end walk‑through, see **`example.ipynb`** (explains probe ge
 ---
 
 ## Notes & scope
-- The identification procedure targets **steady‑state** regimes as in Baumgartner & Rugh (1975).
-- Probes and indexing are tuned for **2nd/3rd‑order** products by default; extending to higher orders requires adjusting the collision‑avoidance rules and LS assembly.
-- There are ambiguities in dead time and gain between the pre- and post-filters of a single system branch (see the plots in example.ipynb).
+- The identification procedure targets **steady-state** regimes.
+- By default, probes and indexing are tuned for second- and third-order products; extending to higher orders requires adjusting the collision-avoidance rules and the least-squares (LS) assembly.
+- There are ambiguities in dead-time and gain between the pre- and post-filters within a single system branch (see the plots in example.ipynb).
+- A **uniqueness constraint** applies to ensure correct per-branch phase identification (phase overflow beyond [-pi, pi]).
 - The cepstrum-based filter design needs improvement.
-- Once an SM system is identified, its parameters can be used to design filters for **active distortion compensation**.
+- Once an SM system is identified, its parameters can be used to design filters for active distortion compensation.
 - The identification procedure has been **successfully applied in hardware setups**.
 
 ---
