@@ -33,7 +33,9 @@ Use it to prototype identification procedures, design measurement campaigns, or 
 
 ## Quick start
 
-### Install & Smoke test
+### Install
+This project is packaged as a standard Python distribution (PEP 517/518). Install it with pip:
+
 ```bash
 #!/usr/bin/env bash
 set -euo pipefail
@@ -59,22 +61,39 @@ test -s demo_run.npz
 ls -lh demo_run.npz
 ```
 
+Typical runtime dependencies include `numpy` and `scipy`. Optional features use `matplotlib` (plotting) and
+`tqdm` (progress bars).
+
 ### Minimal example (simulation + identification skeleton)
 
 For an end‑to‑end walk‑through, see **`example.ipynb`** (explains probe generation, indexing of intermod bins, and the LS setup).
 
+### Repro script (no notebook required)
+
+After installing the package (editable or normal), you can run a small end‑to‑end demo from the command line:
+
+```bash
+# Works without an entrypoint install
+python -m sm_system demo --out demo_run.npz
+
+# Or, after installation, via the console script
+sm-system demo --out demo_run.npz
+```
+
+The demo writes a compressed **`.npz`** containing the simulated probe responses `y` and a JSON snapshot of the active configuration.
+
 ---
 
 ## Modules (what lives where)
-- `module/sm.py` — **`SM_System`**: compose per‑order branches (`add`, `merge`, callable system).
-- `module/sim.py` — **`Simulation`**: orchestrates configuration, probe generation, runs the system/DUT.
-- `module/probe.py` — **HarmonicProbeIterator**: creates frequency‑pair batches that avoid collisions up to a chosen order.
-- `module/lti.py` — **LTI**: stock analog prototypes (LP/HP/BP/Notch/AP); decorator to wrap them as SciPy **TransferFunction** or callables.
-- `module/lse.py` — Helpers to build the LS system from spectra (indexing for 2nd/3rd‑order products, weighting) + **`least_squares`** solver.
-- `module/filter_design.py` — Minimum‑phase recovery and FIR design via frequency sampling.
-- `module/plots.py` — Bode and comparison plots for theory vs identification.
-- `module/config.py` — The **Configuration** dataclass (all run/probe/constraint/filter parameters).
-- `module/utils.py` — Numeric helpers (dB/levels, spacing, SNR/noise, matrix permutations, etc.).
+- `src/sm_system/sm.py` — **`SM_System`**: compose per‑order branches (`add`, `merge`, callable system).
+- `src/sm_system/sim.py` — **`Simulation`**: orchestrates configuration, probe generation, runs the system/DUT.
+- `src/sm_system/probe.py` — **HarmonicProbeIterator**: creates frequency‑pair batches that avoid collisions up to a chosen order.
+- `src/sm_system/lti.py` — **LTI**: stock analog prototypes (LP/HP/BP/Notch/AP); decorator to wrap them as SciPy **TransferFunction** or callables.
+- `src/sm_system/lse.py` — Helpers to build the LS system from spectra (indexing for 2nd/3rd‑order products, weighting) + **`least_squares`** solver.
+- `src/sm_system/filter_design.py` — Minimum‑phase recovery and FIR design via frequency sampling.
+- `src/sm_system/plots.py` — Bode and comparison plots for theory vs identification.
+- `src/sm_system/config.py` — The **Configuration** dataclass (all run/probe/constraint/filter parameters).
+- `src/sm_system/utils.py` — Numeric helpers (dB/levels, spacing, SNR/noise, matrix permutations, etc.).
 
 ---
 
@@ -83,7 +102,7 @@ For an end‑to‑end walk‑through, see **`example.ipynb`** (explains probe ge
 2. **Define** your SM model *(or attach a DUT)* via `SM_System` and `LTI` (or custom callables).
 3. **Run** probes: `y = sim.run()`.
 4. **Extract** steady‑state spectra at fundamental and intermod bins.
-5. **Solve** for branch responses with `module.lse` (optional constraints/weights).
+5. **Solve** for branch responses with `sm_system.lse` (optional constraints/weights).
 6. **Validate & visualize** using Bode plots; optionally design FIRs matching the result.
 
 ---
