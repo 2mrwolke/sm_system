@@ -3,8 +3,9 @@ import numpy as np
 
 def least_squares(A, b, w=None, check=False):
     """
-    Solve the least squares problem A * x = b
-    (optional: with weights w)
+    Solve the least squares problem A * x = b (optional: with weights w)
+
+    DESIGN CHOICE: This implementation prioritizes "derivation traceability" over speed.
 
     Parameters:
     A (numpy.ndarray): The design matrix of shape (m, n)
@@ -43,28 +44,32 @@ def least_squares(A, b, w=None, check=False):
 
 
 def build_coef_matrix_order2(indices):
-    
-    idx_pairs = np.stack([indices['a'], indices['b']], axis=-1)
+    idx_pairs = np.stack([indices["a"], indices["b"]], axis=-1)
     idx_pre = idx_pairs
     idx_pairs = idx_pairs.reshape(-1, 2)
 
     idx_map_pre = np.unique(idx_pairs)
-    idx_map_pre = dict({l: i for i, l in enumerate(idx_map_pre)})
+    idx_map_pre = {val: i for i, val in enumerate(idx_map_pre)}
 
-    idx_post = np.stack([indices['2*a'], indices['2*b'], indices['b-a'], indices['b+a']], axis=-1)
+    idx_post = np.stack(
+        [indices["2*a"], indices["2*b"], indices["b-a"], indices["b+a"]],
+        axis=-1,
+    )
     idx_map_post = np.unique(idx_post)
-    idx_map_post = dict({l: i+len(idx_map_pre) for i, l in enumerate(idx_map_post)})
+    idx_map_post = {
+        val: i + len(idx_map_pre) for i, val in enumerate(idx_map_post)
+    }
 
     idx_pre = np.vectorize(idx_map_pre.get)(idx_pre.reshape((-1)))
     idx_pre = idx_pre.reshape(-1, 2)
     idx_post = np.vectorize(idx_map_post.get)(idx_post.reshape((-1)))
     idx_post = idx_post.reshape(-1, 4)
 
-    zeros = np.zeros((len(idx_pre)*4, len(idx_map_pre) + len(idx_map_post))) 
-    zeros = zeros.reshape((-1, 4, len(idx_map_pre) + len(idx_map_post))) 
+    zeros = np.zeros((len(idx_pre) * 4, len(idx_map_pre) + len(idx_map_post)))
+    zeros = zeros.reshape((-1, 4, len(idx_map_pre) + len(idx_map_post)))
 
     rnge = np.arange(len(idx_pre))
-    
+
     zeros[rnge, 0, idx_pre[:, 0]] = 2
     zeros[rnge, 0, idx_post[:, 0]] = 1
 
@@ -79,46 +84,54 @@ def build_coef_matrix_order2(indices):
     zeros[rnge, 3, idx_pre[:, 1]] = 1
     zeros[rnge, 3, idx_post[:, 3]] = 1
 
-    coef_matrix = np.reshape(zeros, (len(idx_pre)*4, len(idx_map_pre) + len(idx_map_post)))
-    
+    coef_matrix = np.reshape(
+        zeros, (len(idx_pre) * 4, len(idx_map_pre) + len(idx_map_post))
+    )
+
     x_idx_pre = np.array(list(idx_map_pre.keys()))
     x_idx_post = np.array(list(idx_map_post.keys()))
-    
-    return coef_matrix,  x_idx_pre, x_idx_post
+
+    return coef_matrix, x_idx_pre, x_idx_post
 
 
 def build_coef_matrix_order3(indices):
-    
-    idx_pairs = np.stack([indices['a'], indices['b']], axis=-1)
+    idx_pairs = np.stack([indices["a"], indices["b"]], axis=-1)
     idx_pre = idx_pairs
     idx_pairs = idx_pairs.reshape(-1, 2)
 
     idx_map_pre = np.unique(idx_pairs)
-    idx_map_pre = dict({l: i for i, l in enumerate(idx_map_pre)})
+    idx_map_pre = {val: i for i, val in enumerate(idx_map_pre)}
 
-    idx_post = np.stack([indices['3*a'],
-                         indices['3*b'],
-                         indices['b-2*a'],
-                         indices['b+2*a'],
-                         indices['2*b-a'],
-                         indices['2*b+a']], axis=-1)
-    
+    idx_post = np.stack(
+        [
+            indices["3*a"],
+            indices["3*b"],
+            indices["b-2*a"],
+            indices["b+2*a"],
+            indices["2*b-a"],
+            indices["2*b+a"],
+        ],
+        axis=-1,
+    )
+
     sign = np.sign(idx_post)
     idx_post = np.abs(idx_post)
-    
+
     idx_map_post = np.unique(idx_post)
-    idx_map_post = dict({l: i+len(idx_map_pre) for i, l in enumerate(idx_map_post)})
+    idx_map_post = {
+        val: i + len(idx_map_pre) for i, val in enumerate(idx_map_post)
+    }
 
     idx_pre = np.vectorize(idx_map_pre.get)(idx_pre.reshape((-1)))
     idx_pre = idx_pre.reshape(-1, 2)
     idx_post = np.vectorize(idx_map_post.get)(idx_post.reshape((-1)))
     idx_post = idx_post.reshape(-1, 6)
 
-    zeros = np.zeros((len(idx_pre)*6, len(idx_map_pre) + len(idx_map_post))) 
-    zeros = zeros.reshape((-1, 6, len(idx_map_pre) + len(idx_map_post))) 
+    zeros = np.zeros((len(idx_pre) * 6, len(idx_map_pre) + len(idx_map_post)))
+    zeros = zeros.reshape((-1, 6, len(idx_map_pre) + len(idx_map_post)))
 
     rnge = np.arange(len(idx_pre))
-       
+
     zeros[rnge, 0, idx_pre[:, 0]] = 3
     zeros[rnge, 0, idx_post[:, 0]] = 1
 
@@ -127,30 +140,35 @@ def build_coef_matrix_order3(indices):
 
     zeros[rnge, 2, idx_pre[:, 0]] = -2
     zeros[rnge, 2, idx_pre[:, 1]] = 1
-    zeros[rnge, 2, idx_post[:, 2]] = 1  * sign[:, :, 2].reshape((-1))
+    zeros[rnge, 2, idx_post[:, 2]] = 1 * sign[:, :, 2].reshape((-1))
 
     zeros[rnge, 3, idx_pre[:, 0]] = 2
     zeros[rnge, 3, idx_pre[:, 1]] = 1
     zeros[rnge, 3, idx_post[:, 3]] = 1
-    
+
     zeros[rnge, 4, idx_pre[:, 0]] = -1
     zeros[rnge, 4, idx_pre[:, 1]] = 2
     zeros[rnge, 4, idx_post[:, 4]] = 1
-    
+
     zeros[rnge, 5, idx_pre[:, 0]] = 1
     zeros[rnge, 5, idx_pre[:, 1]] = 2
     zeros[rnge, 5, idx_post[:, 5]] = 1
 
-    coef_matrix = np.reshape(zeros, (len(idx_pre)*6, len(idx_map_pre) + len(idx_map_post)))
-    
+    coef_matrix = np.reshape(
+        zeros, (len(idx_pre) * 6, len(idx_map_pre) + len(idx_map_post))
+    )
+
     x_idx_pre = np.array(list(idx_map_pre.keys()))
     x_idx_post = np.array(list(idx_map_post.keys()))
-    
-    return coef_matrix,  x_idx_pre, x_idx_post
+
+    return coef_matrix, x_idx_pre, x_idx_post
 
 
 def clc_lhs_order_2(levels, phase, indices):
-    indices_lhs = np.stack([indices['2*a'], indices['2*b'], indices['b-a'], indices['b+a']], axis=-1)
+    indices_lhs = np.stack(
+        [indices["2*a"], indices["2*b"], indices["b-a"], indices["b+a"]],
+        axis=-1,
+    )
 
     b, s = levels.shape[:2]
     idx = indices_lhs.reshape((-1, 4))
@@ -172,8 +190,16 @@ def clc_lhs_order_2(levels, phase, indices):
 
 def clc_lhs_order_3(levels, phase, indices):
     indices_lhs = np.stack(
-        [indices['3*a'], indices['3*b'], indices['b-2*a'], indices['b+2*a'], indices['2*b-a'], indices['2*b+a']],
-        axis=-1)
+        [
+            indices["3*a"],
+            indices["3*b"],
+            indices["b-2*a"],
+            indices["b+2*a"],
+            indices["2*b-a"],
+            indices["2*b+a"],
+        ],
+        axis=-1,
+    )
 
     b, s = levels.shape[:2]
     lvl = levels.reshape((b * s, -1))
@@ -183,7 +209,9 @@ def clc_lhs_order_3(levels, phase, indices):
     lhs_lvl = np.take_along_axis(lvl, idx, axis=1)
     lhs_lvl = lhs_lvl.reshape((b, -1, 6))
 
-    lhs_offset = 20 * np.log10(np.array([1 / 4, 1 / 4, 3 / 4, 3 / 4, 3 / 4, 3 / 4]))
+    lhs_offset = 20 * np.log10(
+        np.array([1 / 4, 1 / 4, 3 / 4, 3 / 4, 3 / 4, 3 / 4])
+    )
     lhs_offset = lhs_offset.reshape(1, 1, 6)
 
     lhs_lvl -= lhs_offset
@@ -201,57 +229,74 @@ def check_full_rank(matrix):
 
 
 def ensure_fullrank(jakobi, slyz=0, axis=1):
-    jakobi = np.delete(jakobi, slyz, axis)  
+    jakobi = np.delete(jakobi, slyz, axis)
     if check_full_rank(jakobi):
-        print('Jakobi-matrix has full rank!')
+        print("Jakobi-matrix has full rank!")
         return jakobi
     else:
-        print('WARNING: Jakobi-matrix has NOT full rank!')  
+        print("WARNING: Jakobi-matrix has NOT full rank!")
 
 
-def calc_signed_indices(freq_pairs, bin_delta): 
+def calc_signed_indices(freq_pairs, bin_delta):
     """
     Calculates indices of fundamentals and harmonics (up to order of 3)
     of fft-bins for real-valued signals. The Indices are signed in order
     to utilize them for phase identification.
-  
+
     Parameters:
     freq_pairs (numpy.array): Frequency pairs of shape:  [batch_size, n, 2]
     fft_delta (float): Frequency distance of fft-bins
     """
-    
-    bin_pairs = np.round(freq_pairs /  bin_delta)
-    a, b = bin_pairs[:, :, 0], bin_pairs[:,:, 1]
 
-    indices = [a*0, a, b, 2*a, 2*b, 3*a, 3*b, b-2*a, b-a,  b+a, b+2*a, 2*b-a, 2*b+a]
+    bin_pairs = np.round(freq_pairs / bin_delta)
+    a, b = bin_pairs[:, :, 0], bin_pairs[:, :, 1]
+
+    indices = [
+        a * 0,
+        a,
+        b,
+        2 * a,
+        2 * b,
+        3 * a,
+        3 * b,
+        b - 2 * a,
+        b - a,
+        b + a,
+        b + 2 * a,
+        2 * b - a,
+        2 * b + a,
+    ]
     indices = np.stack(indices, axis=-1)
     indices = np.round(indices)
     indices = indices.astype(int)
-    indices = dict({'0': indices[:,:,0],
-                  'a': indices[:,:,1],
-                  'b': indices[:,:,2],
-                  '2*a': indices[:,:,3],
-                  '2*b': indices[:,:,4],
-                  '3*a': indices[:,:,5],
-                  '3*b': indices[:,:,6],
-                  'b-2*a': indices[:,:,7],
-                  'b-a': indices[:,:,8],
-                  'b+a': indices[:,:,9],
-                  'b+2*a': indices[:,:,10],
-                  '2*b-a': indices[:,:,11],
-                  '2*b+a': indices[:,:,12],
-                  })
+    indices = dict(
+        {
+            "0": indices[:, :, 0],
+            "a": indices[:, :, 1],
+            "b": indices[:, :, 2],
+            "2*a": indices[:, :, 3],
+            "2*b": indices[:, :, 4],
+            "3*a": indices[:, :, 5],
+            "3*b": indices[:, :, 6],
+            "b-2*a": indices[:, :, 7],
+            "b-a": indices[:, :, 8],
+            "b+a": indices[:, :, 9],
+            "b+2*a": indices[:, :, 10],
+            "2*b-a": indices[:, :, 11],
+            "2*b+a": indices[:, :, 12],
+        }
+    )
 
     return indices
 
 
 def extract_levels(signals, norm=1):
-  # for real signals
+    # for real signals
     n = signals.shape[-1]
     if n == 0:
-        print('WARNING n = 0 !!!!!!!!!')
+        print("WARNING n = 0 !!!!!!!!!")
     fft = np.fft.rfft(signals)
-    abs = np.abs(fft)/norm
-    with np.errstate(divide='ignore'):
-        mag = 20*np.log10(2*abs/n)
-    return mag    
+    abs = np.abs(fft) / norm
+    with np.errstate(divide="ignore"):
+        mag = 20 * np.log10(2 * abs / n)
+    return mag
