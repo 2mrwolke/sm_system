@@ -33,14 +33,30 @@ Use it to prototype identification procedures, design measurement campaigns, or 
 
 ## Quick start
 
-### Install
-This repo is pure Python. Typical dependencies include `numpy`, `scipy`, `matplotlib`, `tqdm`, `pytz`.
+### Install & Smoke test
 ```bash
-# Option 1: add the module folder to your path
-export PYTHONPATH="$PYTHONPATH:/path/to/sm_system/module"
+#!/usr/bin/env bash
+set -euo pipefail
 
-# Option 2: vendor it in your project or turn it into a package
-# (pip/pyproject not included in this repo snapshot)
+repo_url="https://github.com/2mrwolke/sm_system.git"
+workdir="$(mktemp -d)"
+trap 'rm -rf "$workdir"' EXIT
+
+git clone "$repo_url" "$workdir/sm_system"
+cd "$workdir/sm_system"
+
+python3 -m venv .venv
+# shellcheck disable=SC1091
+source .venv/bin/activate
+
+python -m pip install -U pip setuptools wheel
+python -m pip install -e ".[dev,plot,progress]"
+
+pytest -q
+
+python -m sm_system demo --out demo_run.npz
+test -s demo_run.npz
+ls -lh demo_run.npz
 ```
 
 ### Minimal example (simulation + identification skeleton)
