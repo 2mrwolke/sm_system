@@ -1,0 +1,98 @@
+[build-system]
+requires = [ "hatchling>=1.26", "hatch-vcs>=0.4" ]
+build-backend = "hatchling.build"
+
+[project]
+name = "sm-system"
+dynamic = ["version"]
+description = "Virtual simulation & identification for nonlinear systems with SM structure."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { file = "LICENSE" }
+authors = [{ name = "Frederik" }]
+keywords = ["signal-processing", "system-identification", "nonlinear-systems", "audio"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+]
+
+dependencies = [
+  "numpy",
+  "scipy",
+]
+
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=7",
+  "build>=1",
+  "twine>=5",
+  "ruff>=0.6",
+  "mypy>=1.8",
+  "pre-commit>=3.0",
+]
+
+plot = [
+  "matplotlib",
+]
+
+progress = [
+  "tqdm",
+]
+
+all = [
+  "matplotlib",
+  "tqdm",
+]
+
+
+[project.urls]
+Homepage = "https://github.com/2mrwolke/sm_system"
+Repository = "https://github.com/2mrwolke/sm_system"
+Issues = "https://github.com/2mrwolke/sm_system/issues"
+
+[project.scripts]
+sm-system = "sm_system.__main__:main"
+
+[tool.hatch.build]
+exclude = [
+  "**/__pycache__/**",
+  "**/*.pyc",
+  "**/.pytest_cache/**",
+  "**/.mypy_cache/**",
+  "**/.ruff_cache/**",
+  "**/.ipynb_checkpoints/**",
+  "**/.DS_Store",
+  "**/Thumbs.db",
+  "**/*.log",
+  "build/**",
+  "dist/**",
+  "**/*.egg-info/**",
+  ".venv/**",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/sm_system"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+
+[tool.mypy]
+python_version = "3.11"
+files = ["src"]
+ignore_missing_imports = true
+
+# Keep CI signal without forcing a typing migration.
+warn_unused_ignores = false
+warn_redundant_casts = true
+warn_return_any = false
+no_implicit_optional = false
+
+[tool.hatch.version]
+source = "vcs"
+fallback-version = "0.0.0"
+
+[tool.hatch.build.hooks.vcs]
+version-file = "src/sm_system/_version.py"
