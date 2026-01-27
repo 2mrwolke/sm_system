@@ -9,7 +9,7 @@ description = "Virtual simulation & identification for nonlinear systems with SM
 readme = "README.md"
 requires-python = ">=3.9"
 license = { file = "LICENSE" }
-authors = [{ name = "Frederik" }]
+authors = [{ name = "2mrwolke" }]
 keywords = ["signal-processing", "system-identification", "nonlinear-systems", "audio"]
 classifiers = [
   "Programming Language :: Python :: 3",
@@ -20,6 +20,7 @@ classifiers = [
 dependencies = [
   "numpy",
   "scipy",
+  "PyYAML"
 ]
 
 
