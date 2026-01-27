@@ -144,7 +144,7 @@ class HarmonicProbeIterator:
         np.random.seed(self.seed)
         self.seed += 7
 
-        freq = expspace(min=freq_min, max=freq_max - 1, n=n)
+        freq = expspace(min_val=freq_min, max_val=freq_max - 1, n=n)
 
         freq = np.round(freq * signal_time) / signal_time
         freq = np.where(freq < freq_max, freq, 0)
