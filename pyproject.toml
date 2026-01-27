@@ -7,7 +7,7 @@ name = "sm-system"
 dynamic = ["version"]
 description = "Virtual simulation & identification for nonlinear systems with SM structure."
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 license = { file = "LICENSE" }
 authors = [{ name = "2mrwolke" }]
 keywords = ["signal-processing", "system-identification", "nonlinear-systems", "audio"]
