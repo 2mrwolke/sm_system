@@ -125,8 +125,12 @@ def test_coef_matrix_shapes_and_rank_conditions_order2_and_3():
     fixed2 = None
     for axis in (0, 1):
         for slyz in range(coef2.shape[axis]):
-            candidate = ensure_fullrank(coef2, slyz=slyz, axis=axis)
-            if candidate is not None and check_full_rank(candidate):
+            try:
+                candidate = ensure_fullrank(coef2, slice_idx=slyz, axis=axis)
+            except ValueError:
+                # Some slice removals still leave the matrix rank deficient.
+                continue
+            if check_full_rank(candidate):
                 fixed2 = candidate
                 break
         if fixed2 is not None:
@@ -159,8 +163,11 @@ def test_coef_matrix_shapes_and_rank_conditions_order2_and_3():
     fixed3 = None
     for axis in (0, 1):
         for slyz in range(coef3.shape[axis]):
-            candidate = ensure_fullrank(coef3, slyz=slyz, axis=axis)
-            if candidate is not None and check_full_rank(candidate):
+            try:
+                candidate = ensure_fullrank(coef3, slice_idx=slyz, axis=axis)
+            except ValueError:
+                continue
+            if check_full_rank(candidate):
                 fixed3 = candidate
                 break
         if fixed3 is not None:
@@ -172,8 +179,7 @@ def test_coef_matrix_shapes_and_rank_conditions_order2_and_3():
     assert not check_full_rank(rank_deficient)
 
     # ensure_fullrank deletes a slice; after deleting one column we get full rank (min(shape)=1)
-    reduced = ensure_fullrank(rank_deficient, slyz=1, axis=1)
-    assert reduced is not None
+    reduced = ensure_fullrank(rank_deficient, slice_idx=1, axis=1)
     assert reduced.shape == (3, 1)
     assert check_full_rank(reduced)
 
@@ -226,5 +232,6 @@ def test_least_squares_check_rejects_ill_conditioned_matrix():
     )
     b = np.array([1.0, 1.0, 1.0, 1.0])
 
-    with pytest.raises(AssertionError):
+    # Refactor: least_squares now raises ValueError on ill-conditioned A.
+    with pytest.raises(ValueError, match=r"Ill-conditioned A"):
         least_squares(A, b, check=True)
