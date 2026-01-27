@@ -1,49 +1,60 @@
 import numpy as np
+from numpy.typing import NDArray
+from typing import Optional, Dict
 
 
-def least_squares(A, b, w=None, check=False):
-    """
-    Solve the least squares problem A * x = b (optional: with weights w)
+def least_squares(A: NDArray, b: NDArray, w: Optional[NDArray] = None, check: bool = False) -> NDArray:
+    """Solve the least squares problem A * x = b (optional: with weights w).
 
     DESIGN CHOICE: This implementation prioritizes "derivation traceability" over speed.
 
-    Parameters:
-    A (numpy.ndarray): The design matrix of shape (m, n)
-    b (numpy.ndarray): The target vector of shape (m,)
-    w (numpy.ndarray): The weight vector of shape (m,)
-                       (reciprocal of sample variance)
-    check (bool): if True, function breaks if A is ill conditioned
+    Parameters
+    ----------
+    A:
+        Design matrix of shape (m, n).
+    b:
+        Target vector of shape (m,) or matrix of shape (m, k).
+    w:
+        Optional weight vector of shape (m,) (reciprocal of sample variance).
+    check:
+        If True, raise on ill-conditioned A.
 
-    Returns:
-    x (numpy.ndarray): The solution vector of shape (n,)
+    Returns
+    -------
+    numpy.ndarray
+        Solution vector (n,) or matrix (n, k), depending on *b*.
     """
-
     if check:
-        assert np.linalg.cond(A) <= 10
+        cond = np.linalg.cond(A)
+        if cond > 10:
+            raise ValueError(f"Ill-conditioned A (cond={cond:.3g})")
 
     # without weights
     if w is None:
         return np.linalg.pinv(A) @ b
 
     # with weights
-    else:
-        # Create the weight matrix W, which is a diagonal matrix of weights
-        W = np.diag(w)
+    w_arr = np.asarray(w)
+    if w_arr.ndim != 1:
+        raise ValueError("w must be a 1D weight vector")
+    if w_arr.shape[0] != A.shape[0]:
+        raise ValueError(f"w must have length m={A.shape[0]}, got {w_arr.shape[0]}")
 
-        # Enable complex-valued LSEs
-        A_H = np.conj(A.T)
+    # Create the weight matrix W, which is a diagonal matrix of weights
+    W = np.diag(w_arr)
 
-        # Compute the pseudo-inverse of (A.T @ W @ A)
-        A_T_W_A = A_H @ W @ A
-        A_T_W_A_pseudo_inv = np.linalg.pinv(A_T_W_A)
+    # Enable complex-valued LSEs
+    A_H = np.conj(A.T)
 
-        # Compute the solution x using the formula
-        x = A_T_W_A_pseudo_inv @ (A_H @ W @ b)
+    # Compute the pseudo-inverse of (A.T @ W @ A)
+    A_T_W_A = A_H @ W @ A
+    A_T_W_A_pseudo_inv = np.linalg.pinv(A_T_W_A)
 
-        return x
+    # Compute the solution x using the formula
+    return A_T_W_A_pseudo_inv @ (A_H @ W @ b)
 
 
-def build_coef_matrix_order2(indices):
+def build_coef_matrix_order2(indices: Dict[str, NDArray]):
     idx_pairs = np.stack([indices["a"], indices["b"]], axis=-1)
     idx_pre = idx_pairs
     idx_pairs = idx_pairs.reshape(-1, 2)
@@ -56,9 +67,7 @@ def build_coef_matrix_order2(indices):
         axis=-1,
     )
     idx_map_post = np.unique(idx_post)
-    idx_map_post = {
-        val: i + len(idx_map_pre) for i, val in enumerate(idx_map_post)
-    }
+    idx_map_post = {val: i + len(idx_map_pre) for i, val in enumerate(idx_map_post)}
 
     idx_pre = np.vectorize(idx_map_pre.get)(idx_pre.reshape((-1)))
     idx_pre = idx_pre.reshape(-1, 2)
@@ -84,9 +93,7 @@ def build_coef_matrix_order2(indices):
     zeros[rnge, 3, idx_pre[:, 1]] = 1
     zeros[rnge, 3, idx_post[:, 3]] = 1
 
-    coef_matrix = np.reshape(
-        zeros, (len(idx_pre) * 4, len(idx_map_pre) + len(idx_map_post))
-    )
+    coef_matrix = np.reshape(zeros, (len(idx_pre) * 4, len(idx_map_pre) + len(idx_map_post)))
 
     x_idx_pre = np.array(list(idx_map_pre.keys()))
     x_idx_post = np.array(list(idx_map_post.keys()))
@@ -94,7 +101,7 @@ def build_coef_matrix_order2(indices):
     return coef_matrix, x_idx_pre, x_idx_post
 
 
-def build_coef_matrix_order3(indices):
+def build_coef_matrix_order3(indices: Dict[str, NDArray]):
     idx_pairs = np.stack([indices["a"], indices["b"]], axis=-1)
     idx_pre = idx_pairs
     idx_pairs = idx_pairs.reshape(-1, 2)
@@ -118,9 +125,7 @@ def build_coef_matrix_order3(indices):
     idx_post = np.abs(idx_post)
 
     idx_map_post = np.unique(idx_post)
-    idx_map_post = {
-        val: i + len(idx_map_pre) for i, val in enumerate(idx_map_post)
-    }
+    idx_map_post = {val: i + len(idx_map_pre) for i, val in enumerate(idx_map_post)}
 
     idx_pre = np.vectorize(idx_map_pre.get)(idx_pre.reshape((-1)))
     idx_pre = idx_pre.reshape(-1, 2)
@@ -154,9 +159,7 @@ def build_coef_matrix_order3(indices):
     zeros[rnge, 5, idx_pre[:, 1]] = 2
     zeros[rnge, 5, idx_post[:, 5]] = 1
 
-    coef_matrix = np.reshape(
-        zeros, (len(idx_pre) * 6, len(idx_map_pre) + len(idx_map_post))
-    )
+    coef_matrix = np.reshape(zeros, (len(idx_pre) * 6, len(idx_map_pre) + len(idx_map_post)))
 
     x_idx_pre = np.array(list(idx_map_pre.keys()))
     x_idx_post = np.array(list(idx_map_post.keys()))
@@ -164,11 +167,8 @@ def build_coef_matrix_order3(indices):
     return coef_matrix, x_idx_pre, x_idx_post
 
 
-def clc_lhs_order_2(levels, phase, indices):
-    indices_lhs = np.stack(
-        [indices["2*a"], indices["2*b"], indices["b-a"], indices["b+a"]],
-        axis=-1,
-    )
+def clc_lhs_order_2(levels: NDArray, phase: NDArray, indices: Dict[str, NDArray]):
+    indices_lhs = np.stack([indices["2*a"], indices["2*b"], indices["b-a"], indices["b+a"]], axis=-1)
 
     b, s = levels.shape[:2]
     idx = indices_lhs.reshape((-1, 4))
@@ -188,7 +188,7 @@ def clc_lhs_order_2(levels, phase, indices):
     return lhs_lvl, phase, idx
 
 
-def clc_lhs_order_3(levels, phase, indices):
+def clc_lhs_order_3(levels: NDArray, phase: NDArray, indices: Dict[str, NDArray]):
     indices_lhs = np.stack(
         [
             indices["3*a"],
@@ -209,9 +209,7 @@ def clc_lhs_order_3(levels, phase, indices):
     lhs_lvl = np.take_along_axis(lvl, idx, axis=1)
     lhs_lvl = lhs_lvl.reshape((b, -1, 6))
 
-    lhs_offset = 20 * np.log10(
-        np.array([1 / 4, 1 / 4, 3 / 4, 3 / 4, 3 / 4, 3 / 4])
-    )
+    lhs_offset = 20 * np.log10(np.array([1 / 4, 1 / 4, 3 / 4, 3 / 4, 3 / 4, 3 / 4]))
     lhs_offset = lhs_offset.reshape(1, 1, 6)
 
     lhs_lvl -= lhs_offset
@@ -224,30 +222,36 @@ def clc_lhs_order_3(levels, phase, indices):
     return lhs_lvl, phase, idx
 
 
-def check_full_rank(matrix):
+def check_full_rank(matrix: NDArray) -> bool:
     return np.min(np.min(matrix.shape)) == np.linalg.matrix_rank(matrix)
 
 
-def ensure_fullrank(jakobi, slyz=0, axis=1):
-    jakobi = np.delete(jakobi, slyz, axis)
-    if check_full_rank(jakobi):
-        print("Jakobi-matrix has full rank!")
-        return jakobi
-    else:
-        print("WARNING: Jakobi-matrix has NOT full rank!")
+def ensure_fullrank(jacobian: NDArray, slice_idx: int = 0, axis: int = 1) -> NDArray:
+    """Delete one slice of a Jacobian and ensure full rank.
 
-
-def calc_signed_indices(freq_pairs, bin_delta):
+    Returns the reduced Jacobian or raises ValueError if it is rank deficient.
     """
-    Calculates indices of fundamentals and harmonics (up to order of 3)
-    of fft-bins for real-valued signals. The Indices are signed in order
-    to utilize them for phase identification.
+    jacobian = np.delete(jacobian, slice_idx, axis)
+    if check_full_rank(jacobian):
+        return jacobian
+    raise ValueError("Jacobian matrix is rank deficient (full rank check failed)")
 
-    Parameters:
-    freq_pairs (numpy.array): Frequency pairs of shape:  [batch_size, n, 2]
-    fft_delta (float): Frequency distance of fft-bins
+
+def calc_signed_indices(freq_pairs: NDArray, bin_delta: float) -> Dict[str, NDArray]:
+    """Calculate signed indices of fundamentals/harmonics (up to 3rd order) for rFFT bins.
+
+    Parameters
+    ----------
+    freq_pairs:
+        Frequency pairs of shape [batch_size, n, 2].
+    bin_delta:
+        Frequency distance of FFT bins.
+
+    Returns
+    -------
+    dict[str, numpy.ndarray]
+        Dictionary of index arrays.
     """
-
     bin_pairs = np.round(freq_pairs / bin_delta)
     a, b = bin_pairs[:, :, 0], bin_pairs[:, :, 1]
 
@@ -267,9 +271,8 @@ def calc_signed_indices(freq_pairs, bin_delta):
         2 * b + a,
     ]
     indices = np.stack(indices, axis=-1)
-    indices = np.round(indices)
-    indices = indices.astype(int)
-    indices = dict(
+    indices = np.round(indices).astype(int)
+    return dict(
         {
             "0": indices[:, :, 0],
             "a": indices[:, :, 1],
@@ -287,16 +290,25 @@ def calc_signed_indices(freq_pairs, bin_delta):
         }
     )
 
-    return indices
 
+def extract_levels(signals: NDArray, norm: float = 1.0) -> NDArray:
+    """Extract magnitude levels (dB) from real-valued signals via rFFT.
 
-def extract_levels(signals, norm=1):
-    # for real signals
+    Parameters
+    ----------
+    signals:
+        Time-domain signals (real) with last dimension being time.
+    norm:
+        Linear normalization factor applied before dB conversion; must be > 0.
+    """
     n = signals.shape[-1]
-    if n == 0:
-        print("WARNING n = 0 !!!!!!!!!")
+    if n <= 0:
+        raise ValueError("signals length must be > 0")
+    if norm <= 0:
+        raise ValueError("norm must be > 0")
+
     fft = np.fft.rfft(signals)
-    abs = np.abs(fft) / norm
+    mag_lin = np.abs(fft) / norm
     with np.errstate(divide="ignore"):
-        mag = 20 * np.log10(2 * abs / n)
+        mag = 20 * np.log10(2 * mag_lin / n)
     return mag
