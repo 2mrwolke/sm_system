@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+
 from typing import Callable, Optional
 
 import numpy as np
@@ -57,9 +58,17 @@ class Simulation:
     def set_sm(
         self, sm: Callable[[NDArray[np.floating]], NDArray[np.floating]]
     ) -> None:
+        if not callable(sm):
+            raise TypeError(
+                "Simulation.set_sm(sm): 'sm' must be callable."
+                )
         self.sm = sm
 
     def run(self) -> NDArray[np.floating]:
+        if self.sm is None:
+            raise RuntimeError(
+                "Simulation.run(): Call Simulation.set_sm(sm) before run()."
+                )
         sm = self.sm
         probes = self.harmonic_probes()
         n_batches, n_pairs, n_samps = probes.shape[:3]
