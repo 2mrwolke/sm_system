@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from math import pi
-from typing import Optional, Self
+from typing import Optional
 
 import numpy as np
 from numpy.typing import NDArray
@@ -190,7 +190,7 @@ class HarmonicProbeIterator:
         freq_pairs = np.array(freq_pairs).reshape((-1, 2))
         return freq_pairs
 
-    def __iter__(self) -> Self:
+    def __iter__(self) -> "HarmonicProbeIterator":
         """
         Returns the iterator object (self).
         """
