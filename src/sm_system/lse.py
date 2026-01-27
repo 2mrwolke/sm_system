@@ -39,19 +39,26 @@ def least_squares(A: NDArray, b: NDArray, w: Optional[NDArray] = None, check: bo
         raise ValueError("w must be a 1D weight vector")
     if w_arr.shape[0] != A.shape[0]:
         raise ValueError(f"w must have length m={A.shape[0]}, got {w_arr.shape[0]}")
-
-    # Create the weight matrix W, which is a diagonal matrix of weights
-    W = np.diag(w_arr)
+    if np.any(w_arr < 0):
+        raise ValueError("w must be nonnegative")
 
     # Enable complex-valued LSEs
     A_H = np.conj(A.T)
 
-    # Compute the pseudo-inverse of (A.T @ W @ A)
-    A_T_W_A = A_H @ W @ A
+    # Instead of forming W = diag(w), apply weights by row-scaling.
+    # This preserves the same math: W @ A and W @ b.
+    WA = w_arr[:, None] * A
+    if b.ndim == 1:
+        Wb = w_arr * b
+    else:
+        Wb = w_arr[:, None] * b
+
+    # Compute the pseudo-inverse of (A.H @ W @ A)
+    A_T_W_A = A_H @ WA
     A_T_W_A_pseudo_inv = np.linalg.pinv(A_T_W_A)
 
     # Compute the solution x using the formula
-    return A_T_W_A_pseudo_inv @ (A_H @ W @ b)
+    return A_T_W_A_pseudo_inv @ (A_H @ Wb)
 
 
 def build_coef_matrix_order2(indices: Dict[str, NDArray]):
