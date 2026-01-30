@@ -24,7 +24,7 @@ class Simulation:
     cfg: Configuration
     lti: LTI
     harmonic_probes: HarmonicProbeIterator
-    sm: Callable[[NDArray[np.floating]], NDArray[np.floating]]
+    sm: Optional[Callable[[NDArray[np.floating]], NDArray[np.floating]]]
 
     def __init__(
         self,
@@ -61,14 +61,14 @@ class Simulation:
         if not callable(sm):
             raise TypeError(
                 "Simulation.set_sm(sm): 'sm' must be callable."
-                )
+            )
         self.sm = sm
 
     def run(self) -> NDArray[np.floating]:
         if self.sm is None:
             raise RuntimeError(
                 "Simulation.run(): Call Simulation.set_sm(sm) before run()."
-                )
+            )
         sm = self.sm
         probes = self.harmonic_probes()
         n_batches, n_pairs, n_samps = probes.shape[:3]
